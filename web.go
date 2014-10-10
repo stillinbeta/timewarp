@@ -1,20 +1,36 @@
 package main
 
 import (
-    "fmt"
     "net/http"
+    "net/url"
     "os"
+    "log"
+    "fmt"
 )
 
+func timewarpServer(w http.ResponseWriter, req *http.Request) {
+    values, err := url.ParseQuery(req.URL.RawQuery)
+
+    if err != nil {
+        log.Panic("Couldn't decode querystring %v", err)
+    }
+
+    ical := values.Get("ical")
+    if ical == "" {
+        w.WriteHeader(400)
+        fmt.Fprintln(w, "missing ?ical=")
+        log.Println("Couldn't decode querystring %v", err)
+        return
+    }
+
+    fmt.Fprintf(w, "You submitted %v\n", ical)
+}
+
 func main() {
-    http.HandleFunc("/", hello)
-    fmt.Println("listening...")
+    http.HandleFunc("/", timewarpServer)
+
     err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
     if err != nil {
       panic(err)
     }
-}
-
-func hello(res http.ResponseWriter, req *http.Request) {
-    fmt.Fprintln(res, "hello, world")
 }
